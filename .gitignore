@@ -22,3 +22,15 @@ Thumbs.db
 
 # Temp
 .tmp/
+
+# Local AI / project docs (not part of the app)
+.agents/
+memory/
+claude.md
+implementation_plan.md
+copy_images*.py
+debug*.log
+
+# Agent instruction files inside the app folder
+luxora/AGENTS.md
+luxora/CLAUDE.md
