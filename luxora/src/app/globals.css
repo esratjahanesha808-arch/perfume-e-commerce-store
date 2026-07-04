@@ -3636,25 +3636,25 @@ img, svg, video { display: block; max-width: 100%; }
 
 .dashboard-status-confirmed,
 .dashboard-status-delivered {
-  background: rgba(72, 160, 96, 0.12);
-  color: #7fd99a;
+  background: #2E7D32;
+  color: #FFFFFF;
 }
 
 .dashboard-status-pending,
 .dashboard-status-processing {
-  background: rgba(200, 169, 107, 0.12);
-  color: #c8a96b;
+  background: #8C6C2E;
+  color: #FFFFFF;
 }
 
 .dashboard-status-shipped {
-  background: rgba(96, 144, 200, 0.12);
-  color: #8ec0ff;
+  background: #1565C0;
+  color: #FFFFFF;
 }
 
 .dashboard-status-cancelled,
 .dashboard-status-refunded {
-  background: rgba(200, 96, 96, 0.12);
-  color: #f0a0a0;
+  background: #C62828;
+  color: #FFFFFF;
 }
 
 .dashboard-order-card-body {

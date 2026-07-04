@@ -23,6 +23,7 @@ export function Header() {
   const { count: cartCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled]     = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -98,12 +99,38 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-4 lg:gap-5 text-text-primary shrink-0">
-            <button
-              className="hover:text-gold transition-colors duration-150"
-              aria-label="Search"
-            >
-              <Search size={19} strokeWidth={1.5} />
-            </button>
+            {searchOpen ? (
+              <form action="/shop" method="GET" className="flex items-center animate-in fade-in slide-in-from-right-4 duration-300">
+                <input
+                  name="q"
+                  type="search"
+                  placeholder="Search..."
+                  autoFocus
+                  className="w-32 lg:w-48 bg-transparent border-b border-gold text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none py-1 mr-2"
+                  onBlur={(e) => {
+                    if (!e.target.value.trim()) {
+                      setTimeout(() => setSearchOpen(false), 200);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(false)}
+                  className="hover:text-gold transition-colors duration-150"
+                  aria-label="Close search"
+                >
+                  <X size={19} strokeWidth={1.5} />
+                </button>
+              </form>
+            ) : (
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="hover:text-gold transition-colors duration-150"
+                aria-label="Search"
+              >
+                <Search size={19} strokeWidth={1.5} />
+              </button>
+            )}
 
             {status === "loading" ? (
               <div className="w-[18px] h-[18px] rounded-full border-2 border-gold border-t-transparent animate-spin" />

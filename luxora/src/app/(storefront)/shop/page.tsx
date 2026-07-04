@@ -31,6 +31,7 @@ export default async function ShopPage({
 }) {
   const params = await searchParams;
   const brandParam = typeof params.brand === "string" ? params.brand : undefined;
+  const qParam = typeof params.q === "string" ? params.q : undefined;
 
   const [dbProducts, brands] = await Promise.all([
     getAllProducts(),
@@ -45,12 +46,13 @@ export default async function ShopPage({
 
   return (
     <ShopPageClient
-      key={initialBrand ?? "all"}
+      key={(initialBrand ?? "all") + "-" + (qParam ?? "")}
       products={products}
       brandsList={brandsList}
       concentrationsList={concentrationsList}
       maxPrice={maxPrice}
       initialBrand={initialBrand}
+      initialSearchQuery={qParam}
     />
   );
 }

@@ -24,6 +24,7 @@ interface ShopPageClientProps {
   concentrationsList: string[];
   maxPrice: number;
   initialBrand?: string;
+  initialSearchQuery?: string;
 }
 
 export function ShopPageClient({
@@ -32,9 +33,11 @@ export function ShopPageClient({
   concentrationsList,
   maxPrice,
   initialBrand,
+  initialSearchQuery,
 }: ShopPageClientProps) {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("All Perfumes");
+  const [globalSearchQuery, setGlobalSearchQuery] = useState(initialSearchQuery || "");
   const [brandSearchQuery, setBrandSearchQuery] = useState("");
   const [selectedBrands, setSelectedBrands] = useState<string[]>(
     initialBrand ? [initialBrand] : []
@@ -53,7 +56,7 @@ export function ShopPageClient({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategory, selectedBrands, brandSearchQuery, priceRange, selectedConcentrations, sortBy]);
+  }, [selectedCategory, selectedBrands, brandSearchQuery, globalSearchQuery, priceRange, selectedConcentrations, sortBy]);
 
   const filteredProducts = useMemo(() => {
     return products
@@ -74,6 +77,17 @@ export function ShopPageClient({
 
         if (brandSearchQuery.trim() !== "") {
           if (!product.brand.toLowerCase().includes(brandSearchQuery.toLowerCase())) {
+            return false;
+          }
+        }
+
+        if (globalSearchQuery.trim() !== "") {
+          const query = globalSearchQuery.toLowerCase();
+          if (
+            !product.name.toLowerCase().includes(query) &&
+            !product.brand.toLowerCase().includes(query) &&
+            !(product.shortDesc && product.shortDesc.toLowerCase().includes(query))
+          ) {
             return false;
           }
         }
@@ -101,6 +115,7 @@ export function ShopPageClient({
     selectedCategory,
     selectedBrands,
     brandSearchQuery,
+    globalSearchQuery,
     priceRange,
     selectedConcentrations,
     sortBy,
@@ -123,7 +138,8 @@ export function ShopPageClient({
     selectedCategory !== "All Perfumes" ||
     selectedBrands.length > 0 ||
     priceRange < maxPrice ||
-    selectedConcentrations.length > 0;
+    selectedConcentrations.length > 0 ||
+    globalSearchQuery.trim() !== "";
 
   const handleBrandToggle = (brandName: string) => {
     setSelectedBrands((prev) => {
@@ -147,7 +163,8 @@ export function ShopPageClient({
     setSelectedConcentrations([]);
     setSortBy("popularity");
     setBrandSearchQuery("");
-    if (initialBrand) {
+    setGlobalSearchQuery("");
+    if (initialBrand || initialSearchQuery) {
       router.replace("/shop");
     }
   };
@@ -160,13 +177,22 @@ export function ShopPageClient({
             <h1 className="!text-lg md:!text-xl !font-medium !leading-tight !tracking-[0.14em] !text-[#D9CEBD] uppercase mb-2">
               Shop
             </h1>
-            <nav className="flex items-center gap-2 text-[11px] tracking-wider text-[#8A8A8A] uppercase">
+            <nav className="flex items-center gap-2 text-[11px] tracking-wider text-[#8A8A8A] uppercase mb-4">
               <Link href="/" className="hover:text-[#C8A96B] transition-colors duration-150">
                 Home
               </Link>
               <span>&gt;</span>
               <span className="text-[#C8A96B]">Shop</span>
             </nav>
+            {globalSearchQuery && (
+              <div className="flex items-center gap-2 inline-flex bg-[#111111] px-3 py-1.5 rounded-sm border border-[rgba(200,169,107,0.3)]">
+                <span className="text-[11px] text-[#A1A1A1] uppercase tracking-widest">Search: <span className="text-[#F5F5F5] font-medium">{globalSearchQuery}</span></span>
+                <button onClick={() => {
+                  setGlobalSearchQuery("");
+                  if (initialSearchQuery) router.push("/shop");
+                }} className="ml-2 hover:text-[#C8A96B] text-[#A1A1A1] transition-colors"><X size={12} /></button>
+              </div>
+            )}
           </div>
         </div>
 
