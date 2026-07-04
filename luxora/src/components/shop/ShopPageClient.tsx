@@ -86,7 +86,7 @@ export function ShopPageClient({
           if (
             !product.name.toLowerCase().includes(query) &&
             !product.brand.toLowerCase().includes(query) &&
-            !(product.shortDesc && product.shortDesc.toLowerCase().includes(query))
+            !(product.description && product.description.toLowerCase().includes(query))
           ) {
             return false;
           }
