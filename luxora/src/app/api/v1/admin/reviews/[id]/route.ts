@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api-auth";
+import { requireAdminWrite } from "@/lib/api-auth";
 import { moderateReviewSchema } from "@/lib/validations/review";
 import {
   ReviewError,
@@ -10,7 +10,7 @@ import {
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const { error } = await requireAdmin();
+  const { isDemo, error } = await requireAdminWrite();
   if (error) return error;
 
   try {
@@ -28,6 +28,10 @@ export async function PATCH(request: Request, context: RouteContext) {
         },
         { status: 400 }
       );
+    }
+
+    if (isDemo) {
+      return NextResponse.json({ data: { id, isApproved: parsed.data.isApproved } });
     }
 
     const review = await moderateReview(id, parsed.data.isApproved);
@@ -49,11 +53,16 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  const { error } = await requireAdmin();
+  const { isDemo, error } = await requireAdminWrite();
   if (error) return error;
 
   try {
     const { id } = await context.params;
+
+    if (isDemo) {
+      return NextResponse.json({ data: { deleted: true } });
+    }
+
     await deleteReview(id);
     return NextResponse.json({ data: { deleted: true } });
   } catch (err) {

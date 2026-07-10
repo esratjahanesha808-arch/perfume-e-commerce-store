@@ -39,7 +39,7 @@ async function main() {
   await prisma.verificationToken.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create Admin User
+  // Create Admin User (SUPER_ADMIN — full access)
   console.log("Creating admin user...");
   const adminPassword = await hash("Admin123!", 12);
   const admin = await prisma.user.create({
@@ -47,7 +47,22 @@ async function main() {
       email: "admin@luxora.com",
       name: "Luxora Admin",
       passwordHash: adminPassword,
+      role: "SUPER_ADMIN",
+      emailVerified: new Date(),
+      isActive: true,
+    },
+  });
+
+  // Create Demo Admin (ADMIN role, isDemo flag blocks writes)
+  console.log("Creating demo admin user...");
+  const demoAdminPassword = await hash("DemoAdmin123!", 12);
+  await prisma.user.create({
+    data: {
+      email: "demo-admin@luxora.com",
+      name: "Demo Admin",
+      passwordHash: demoAdminPassword,
       role: "ADMIN",
+      notificationPrefs: { isDemo: true },
       emailVerified: new Date(),
       isActive: true,
     },
@@ -61,6 +76,20 @@ async function main() {
       email: "customer@test.com",
       name: "John Doe",
       passwordHash: customerPassword,
+      role: "CUSTOMER",
+      emailVerified: new Date(),
+      isActive: true,
+    },
+  });
+
+  // Create Demo Customer
+  console.log("Creating demo customer user...");
+  const demoCustomerPassword = await hash("Demo123!", 12);
+  await prisma.user.create({
+    data: {
+      email: "demo@luxora.com",
+      name: "Demo Customer",
+      passwordHash: demoCustomerPassword,
       role: "CUSTOMER",
       emailVerified: new Date(),
       isActive: true,

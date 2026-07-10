@@ -35,7 +35,7 @@ export function parseAdminDateRange(params: {
   const to = params.to ? endOfDay(new Date(params.to)) : endOfDay(new Date());
   const from = params.from
     ? startOfDay(new Date(params.from))
-    : startOfDay(new Date(to.getTime() - 6 * DAY_MS));
+    : startOfDay(new Date(to.getTime() - 29 * DAY_MS));
   return { from, to };
 }
 

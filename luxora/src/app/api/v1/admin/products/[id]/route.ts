@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api-auth";
+import { requireAdminWrite } from "@/lib/api-auth";
 import { adminProductUpdateSchema } from "@/lib/validations/product";
 import { updateAdminProduct } from "@/services/admin-product.service";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const { error } = await requireAdmin();
+  const { isDemo, error } = await requireAdminWrite();
   if (error) return error;
 
   const { id } = await context.params;
@@ -21,6 +21,10 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   try {
+    if (isDemo) {
+      return NextResponse.json({ id, ...parsed.data });
+    }
+
     const product = await updateAdminProduct(id, parsed.data);
     return NextResponse.json(product);
   } catch {

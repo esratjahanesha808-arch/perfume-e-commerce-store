@@ -48,6 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             isActive: true,
             avatarUrl: true,
             emailVerified: true,
+            notificationPrefs: true,
           },
         });
 
@@ -63,6 +64,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           data: { lastLoginAt: new Date() },
         });
 
+        // Detect demo users from notificationPrefs JSON
+        const prefs = (user.notificationPrefs ?? {}) as Record<string, unknown>;
+        const isDemo = prefs.isDemo === true;
+
         return {
           id: user.id,
           email: user.email,
@@ -70,6 +75,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           image: user.avatarUrl,
           role: user.role,
           emailVerified: user.emailVerified,
+          isDemo,
         };
       },
     }),
@@ -81,6 +87,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.role = (user as { role?: string }).role ?? "CUSTOMER";
         token.emailVerified = (user as { emailVerified?: Date | null }).emailVerified ?? null;
+        token.isDemo = (user as { isDemo?: boolean }).isDemo ?? false;
       }
 
       // Allow session updates from client
@@ -95,6 +102,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.emailVerified = token.emailVerified as Date | null;
+        (session.user as { isDemo?: boolean }).isDemo = (token.isDemo as boolean) ?? false;
       }
       return session;
     },

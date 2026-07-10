@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api-auth";
+import { requireAdminWrite } from "@/lib/api-auth";
 import { adminOrderStatusSchema } from "@/lib/validations/order";
-import { updateAdminOrderStatus } from "@/services/order.service";
+import { updateAdminOrderStatus, getAdminOrderById } from "@/services/order.service";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const { session, error } = await requireAdmin();
+  const { session, isDemo, error } = await requireAdminWrite();
   if (error) return error;
 
   const { id } = await context.params;
@@ -21,6 +21,14 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   try {
+    if (isDemo) {
+      const order = await getAdminOrderById(id);
+      if (!order) {
+        return NextResponse.json({ error: { code: "NOT_FOUND", message: "Order not found" } }, { status: 404 });
+      }
+      return NextResponse.json({ ...order, status: parsed.data.status });
+    }
+
     const order = await updateAdminOrderStatus(
       id,
       parsed.data.status,

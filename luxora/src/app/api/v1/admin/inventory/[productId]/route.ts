@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api-auth";
+import { requireAdminWrite } from "@/lib/api-auth";
 import { adminInventoryAdjustSchema } from "@/lib/validations/inventory";
 import { adjustInventory } from "@/services/inventory.service";
 
 type RouteContext = { params: Promise<{ productId: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const { session, error } = await requireAdmin();
+  const { session, isDemo, error } = await requireAdminWrite();
   if (error) return error;
 
   const { productId } = await context.params;
@@ -21,6 +21,16 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   try {
+    if (isDemo) {
+      return NextResponse.json({
+        inventory: {
+          productId,
+          quantity: 100, // mock quantity
+          reserved: 0,
+        },
+      });
+    }
+
     const result = await adjustInventory({
       productId,
       quantityChange: parsed.data.quantityChange,

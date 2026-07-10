@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api-auth";
+import { requireAdmin, requireAdminWrite } from "@/lib/api-auth";
 import { updateCouponSchema } from "@/lib/validations/coupon";
 import {
   CouponError,
@@ -36,7 +36,7 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PUT(request: Request, context: RouteContext) {
-  const { error } = await requireAdmin();
+  const { isDemo, error } = await requireAdminWrite();
   if (error) return error;
 
   const { id } = await context.params;
@@ -55,6 +55,16 @@ export async function PUT(request: Request, context: RouteContext) {
         },
         { status: 400 }
       );
+    }
+
+    if (isDemo) {
+      return NextResponse.json({
+        data: {
+          id,
+          ...parsed.data,
+          updatedAt: new Date(),
+        },
+      });
     }
 
     const coupon = await updateCoupon(id, parsed.data);
@@ -77,12 +87,16 @@ export async function PUT(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  const { error } = await requireAdmin();
+  const { isDemo, error } = await requireAdminWrite();
   if (error) return error;
 
   const { id } = await context.params;
 
   try {
+    if (isDemo) {
+      return NextResponse.json({ data: { id } });
+    }
+
     await deleteCoupon(id);
     return NextResponse.json({ data: { id } });
   } catch (err) {

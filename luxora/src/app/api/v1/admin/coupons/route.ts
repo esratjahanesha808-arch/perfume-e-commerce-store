@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api-auth";
+import { requireAdmin, requireAdminWrite } from "@/lib/api-auth";
 import {
   adminCouponListQuerySchema,
   createCouponSchema,
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { error } = await requireAdmin();
+  const { isDemo, error } = await requireAdminWrite();
   if (error) return error;
 
   try {
@@ -46,6 +46,17 @@ export async function POST(request: Request) {
         },
         { status: 400 }
       );
+    }
+
+    if (isDemo) {
+      return NextResponse.json({
+        data: {
+          id: `demo-${Date.now()}`,
+          ...parsed.data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      }, { status: 201 });
     }
 
     const coupon = await createCoupon(parsed.data);

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/api-auth";
+import { requireAdminWrite } from "@/lib/api-auth";
 import { adminCollectionUpdateSchema } from "@/lib/validations/collection";
 import { updateAdminCollection } from "@/services/admin-collection.service";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const { error } = await requireAdmin();
+  const { isDemo, error } = await requireAdminWrite();
   if (error) return error;
 
   const { id } = await context.params;
@@ -21,6 +21,10 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   try {
+    if (isDemo) {
+      return NextResponse.json({ id, ...parsed.data });
+    }
+
     const collection = await updateAdminCollection(id, parsed.data);
     return NextResponse.json(collection);
   } catch {

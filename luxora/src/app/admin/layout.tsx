@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import { getInitials } from "@/lib/loyalty";
+import { isUserDemo } from "@/lib/demo";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { getAdminSidebarMeta } from "@/services/admin.service";
 
@@ -27,7 +28,10 @@ export default async function AdminLayout({
     redirect("/");
   }
 
-  const meta = await getAdminSidebarMeta();
+  const [meta, isDemo] = await Promise.all([
+    getAdminSidebarMeta(),
+    isUserDemo(session.user.id),
+  ]);
 
   const user = {
     name: session.user.name || "Admin User",
@@ -37,7 +41,7 @@ export default async function AdminLayout({
 
   return (
     <Suspense fallback={<div className="admin-layout admin-layout-loading" />}>
-      <AdminShell user={user} notificationCount={meta.notificationCount}>
+      <AdminShell user={user} notificationCount={meta.notificationCount} isDemo={isDemo}>
         {children}
       </AdminShell>
     </Suspense>

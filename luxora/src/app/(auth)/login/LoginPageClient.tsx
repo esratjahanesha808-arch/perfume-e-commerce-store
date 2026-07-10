@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { normalizeEmail } from "@/lib/normalize-email";
+import { DemoCredentialsPanel } from "@/components/auth/DemoCredentialsPanel";
 
 function getCallbackUrl() {
   if (typeof window === "undefined") return "/";
@@ -29,6 +30,7 @@ export function LoginPageClient({ googleOAuthEnabled }: LoginPageClientProps) {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({ resolver: zodResolver(loginSchema) });
 
@@ -60,92 +62,104 @@ export function LoginPageClient({ googleOAuthEnabled }: LoginPageClientProps) {
     await signIn("google", { callbackUrl: getCallbackUrl() });
   }
 
+  function handleAutofill(email: string, password: string) {
+    setValue("email", email, { shouldValidate: true, shouldDirty: true });
+    setValue("password", password, { shouldValidate: true, shouldDirty: true });
+    toast.success(`Credentials loaded — click Sign in!`);
+    document.getElementById("btn-login-submit")?.focus();
+  }
+
   return (
-    <div className="auth-card">
-      <header className="auth-header">
-        <h1>Welcome back</h1>
-        <p>Sign in with your email and password.</p>
-      </header>
+    <div className="auth-login-wrapper">
+      <div className="auth-card">
+        <header className="auth-header">
+          <h1>Welcome back</h1>
+          <p>Sign in with your email and password.</p>
+        </header>
 
-      {googleOAuthEnabled ? (
-        <>
-          <button
-            id="btn-google-signin"
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={isGoogleLoading || isSubmitting}
-            className="btn btn-ghost btn-full h-12 gap-2.5"
-          >
-            {isGoogleLoading ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <GoogleIcon />
-            )}
-            Continue with Google
-          </button>
+        {googleOAuthEnabled ? (
+          <>
+            <button
+              id="btn-google-signin"
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isGoogleLoading || isSubmitting}
+              className="btn btn-ghost btn-full h-12 gap-2.5"
+            >
+              {isGoogleLoading ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <GoogleIcon />
+              )}
+              Continue with Google
+            </button>
 
-          <div className="auth-divider">
-            <span>or continue with email</span>
-          </div>
-        </>
-      ) : null}
+            <div className="auth-divider">
+              <span>or continue with email</span>
+            </div>
+          </>
+        ) : null}
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="auth-form">
-        <div className="auth-field">
-          <label htmlFor="login-email" className="auth-label">
-            Email address
-          </label>
-          <input
-            id="login-email"
-            type="email"
-            autoComplete="email"
-            {...register("email")}
-            className="input-gold"
-            placeholder="you@gmail.com"
-          />
-          {errors.email && <FieldError message={errors.email.message!} />}
-        </div>
-
-        <div className="auth-field">
-          <div className="auth-label-row">
-            <label htmlFor="login-password" className="auth-label">
-              Password
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="auth-form">
+          <div className="auth-field">
+            <label htmlFor="login-email" className="auth-label">
+              Email address
             </label>
-            <Link href="/forgot-password" className="text-xs text-[var(--gold-muted)] hover:text-[var(--gold)] transition-colors">
-              Forgot password?
-            </Link>
-          </div>
-          <div className="relative">
             <input
-              id="login-password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              {...register("password")}
-              className="input-gold pr-11"
-              placeholder="••••••••"
+              id="login-email"
+              type="email"
+              autoComplete="email"
+              {...register("email")}
+              className="input-gold"
+              placeholder="you@gmail.com"
             />
-            <PasswordToggle show={showPassword} onToggle={() => setShowPassword(!showPassword)} />
+            {errors.email && <FieldError message={errors.email.message!} />}
           </div>
-          {errors.password && <FieldError message={errors.password.message!} />}
-        </div>
 
-        <button
-          id="btn-login-submit"
-          type="submit"
-          disabled={isSubmitting || isGoogleLoading}
-          className="btn btn-gold btn-full auth-submit"
-        >
-          {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : null}
-          {isSubmitting ? "Signing in…" : "Sign in"}
-        </button>
-      </form>
+          <div className="auth-field">
+            <div className="auth-label-row">
+              <label htmlFor="login-password" className="auth-label">
+                Password
+              </label>
+              <Link href="/forgot-password" className="text-xs text-[var(--gold-muted)] hover:text-[var(--gold)] transition-colors">
+                Forgot password?
+              </Link>
+            </div>
+            <div className="relative">
+              <input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                {...register("password")}
+                className="input-gold pr-11"
+                placeholder="••••••••"
+              />
+              <PasswordToggle show={showPassword} onToggle={() => setShowPassword(!showPassword)} />
+            </div>
+            {errors.password && <FieldError message={errors.password.message!} />}
+          </div>
 
-      <p className="auth-footer">
-        Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-[var(--gold)] font-semibold hover:text-[var(--gold-hover)] transition-colors">
-          Create account
-        </Link>
-      </p>
+          <button
+            id="btn-login-submit"
+            type="submit"
+            disabled={isSubmitting || isGoogleLoading}
+            className="btn btn-gold btn-full auth-submit"
+          >
+            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : null}
+            {isSubmitting ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+
+        <p className="auth-footer">
+          Don&apos;t have an account?{" "}
+          <Link href="/register" className="text-[var(--gold)] font-semibold hover:text-[var(--gold-hover)] transition-colors">
+            Create account
+          </Link>
+        </p>
+      </div>
+
+      {/* Demo credentials panel — helps clients test the site */}
+      <DemoCredentialsPanel onAutofill={handleAutofill} />
     </div>
   );
 }
