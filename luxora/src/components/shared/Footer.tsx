@@ -11,18 +11,18 @@ const SHOP_LINKS = [
 ];
 
 const SERVICE_LINKS = [
-  { label: "Contact Us",          href: "/contact" },
-  { label: "Shipping & Delivery", href: "/shipping" },
-  { label: "Returns & Refunds",   href: "/returns" },
-  { label: "Track Order",         href: "/track" },
-  { label: "FAQ",                 href: "/faq" },
+  { label: "Contact Us",          href: "/" },
+  { label: "Shipping & Delivery", href: "/" },
+  { label: "Returns & Refunds",   href: "/" },
+  { label: "Track Order",         href: "/" },
+  { label: "FAQ",                 href: "/" },
 ];
 
 const ABOUT_LINKS = [
-  { label: "Our Story",    href: "/story" },
-  { label: "Authenticity", href: "/authenticity" },
-  { label: "Careers",      href: "/careers" },
-  { label: "Press",        href: "/press" },
+  { label: "Our Story",    href: "/" },
+  { label: "Authenticity", href: "/" },
+  { label: "Careers",      href: "/" },
+  { label: "Press",        href: "/" },
 ];
 
 const SOCIAL = [
@@ -84,7 +84,7 @@ function FooterColumn({ title, links }: { title: string; links: { label: string;
       </h5>
       <ul className="flex flex-col gap-[14px]">
         {links.map((link) => (
-          <li key={link.href}>
+          <li key={`${title}-${link.label}`}>
             <Link href={link.href} className="hover:opacity-80 transition-opacity" style={{ color: MUTED, fontSize: '12px', letterSpacing: '0.03em' }}>
               {link.label}
             </Link>
@@ -314,9 +314,9 @@ export function Footer() {
               © {new Date().getFullYear()} Luxora. All Rights Reserved.
             </p>
             <div className="flex items-center gap-4" style={{ fontSize: '11px', letterSpacing: '0.04em' }}>
-              <Link href="/privacy" className="hover:opacity-80 transition-opacity" style={{ color: MUTED }}>Privacy Policy</Link>
+              <Link href="/" className="hover:opacity-80 transition-opacity" style={{ color: MUTED }}>Privacy Policy</Link>
               <span style={{ color: 'rgba(109,110,108,0.35)' }} aria-hidden="true">|</span>
-              <Link href="/terms" className="hover:opacity-80 transition-opacity" style={{ color: MUTED }}>Terms & Conditions</Link>
+              <Link href="/" className="hover:opacity-80 transition-opacity" style={{ color: MUTED }}>Terms & Conditions</Link>
             </div>
           </div>
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import {
   User, Search, Heart, ShoppingBag,
-  Truck, ChevronDown, Menu, X,
+  Truck, Menu, X,
 } from "lucide-react";
 import { useWishlist } from "@/components/wishlist/WishlistProvider";
 import { useCart } from "@/components/cart/CartProvider";
@@ -40,25 +40,6 @@ export function Header() {
 
   return (
     <>
-      <div className="hidden md:block bg-background border-b border-border-dark text-[11px] text-text-secondary py-[7px]">
-        <div className="site-container flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 shrink-0">
-            <Truck size={13} className="text-gold shrink-0" />
-            <span className="tracking-wide whitespace-nowrap">Free shipping on orders over $99</span>
-          </div>
-
-          <span className="hidden lg:block text-gold text-[9px] tracking-[0.25em] uppercase">
-            Discover Your Signature Scent
-          </span>
-
-          <div className="flex items-center gap-3 tracking-wide shrink-0">
-            <button className="hover:text-gold transition-colors flex items-center gap-1">
-              EN <ChevronDown size={11} />
-            </button>
-          </div>
-        </div>
-      </div>
-
       <header
         className={`sticky top-0 z-50 w-full border-b border-border-dark transition-all duration-300 ${
           scrolled ? "glass shadow-md" : "bg-background"
