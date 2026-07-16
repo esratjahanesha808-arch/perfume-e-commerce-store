@@ -8,7 +8,7 @@ import { ProductCard } from "@/components/shared/ProductCard";
 import { getFeaturedProducts } from "@/services/product.service";
 import { toProductCard } from "@/lib/serialize-product";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 /* ─────────────────────────────────────────────
    STATIC DATA (brands section uses SVG logos)
