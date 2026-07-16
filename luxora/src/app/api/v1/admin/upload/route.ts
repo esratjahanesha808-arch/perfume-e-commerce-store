@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
+import { apiError, logApiError } from "@/lib/api-response";
+import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
+import { adminRatelimit } from "@/lib/redis";
 import { uploadImage, isCloudinaryConfigured } from "@/lib/cloudinary";
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -7,18 +10,22 @@ const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 // POST /api/v1/admin/upload
 // Body: multipart/form-data — field "file" (image), optional "folder"
 export async function POST(request: NextRequest) {
-  const { error } = await requireAdmin();
+  const { session, error } = await requireAdmin();
   if (error) return error;
 
+  const limited = await enforceRateLimit({
+    limiter: adminRatelimit,
+    key: `admin-upload:${session!.user.id}:${getClientIp(request)}`,
+    fallbackLimit: 60,
+    fallbackWindowMs: 60 * 1000,
+  });
+  if (limited) return limited;
+
   if (!isCloudinaryConfigured) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "SERVICE_UNAVAILABLE",
-          message: "Image upload is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.",
-        },
-      },
-      { status: 503 }
+    return apiError(
+      "SERVICE_UNAVAILABLE",
+      "Image upload is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.",
+      503
     );
   }
 
@@ -30,24 +37,19 @@ export async function POST(request: NextRequest) {
       : undefined;
 
     if (!(file instanceof File)) {
-      return NextResponse.json(
-        { error: { code: "BAD_REQUEST", message: "\"file\" field is required and must be an image file." } },
-        { status: 400 }
+      return apiError(
+        "BAD_REQUEST",
+        '"file" field is required and must be an image file.',
+        400
       );
     }
 
     if (file.size > MAX_BYTES) {
-      return NextResponse.json(
-        { error: { code: "FILE_TOO_LARGE", message: "File must be under 5 MB." } },
-        { status: 413 }
-      );
+      return apiError("FILE_TOO_LARGE", "File must be under 5 MB.", 413);
     }
 
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json(
-        { error: { code: "INVALID_FILE_TYPE", message: "Only image files are accepted." } },
-        { status: 415 }
-      );
+      return apiError("INVALID_FILE_TYPE", "Only image files are accepted.", 415);
     }
 
     const buffer = await file.arrayBuffer();
@@ -58,10 +60,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: result }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/v1/admin/upload]", err);
-    return NextResponse.json(
-      { error: { code: "UPLOAD_FAILED", message: "Image upload failed." } },
-      { status: 500 }
-    );
+    logApiError("POST /api/v1/admin/upload", err);
+    return apiError("UPLOAD_FAILED", "Image upload failed.", 500);
   }
 }

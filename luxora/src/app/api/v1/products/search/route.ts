@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { meili, PRODUCTS_INDEX } from "@/lib/meilisearch";
 import { db, isDbConfigured } from "@/lib/prisma";
 
 const MAX_RESULTS = 20;
@@ -14,23 +13,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: [], meta: { total: 0 } });
   }
 
-  // Attempt Meilisearch first
-  if (meili) {
-    try {
-      const result = await meili
-        .index(PRODUCTS_INDEX)
-        .search(query, { limit, filter: "isActive = true" });
-
-      return NextResponse.json({
-        data: result.hits,
-        meta: { total: result.estimatedTotalHits ?? result.hits.length, source: "meilisearch" },
-      });
-    } catch (err) {
-      console.warn("[search] Meilisearch unavailable, falling back to DB:", err);
-    }
-  }
-
-  // DB fallback — basic ilike search
   if (!isDbConfigured) {
     return NextResponse.json({ data: [], meta: { total: 0 } });
   }

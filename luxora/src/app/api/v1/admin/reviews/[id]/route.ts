@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
 import { requireAdminWrite } from "@/lib/api-auth";
+import { apiError, apiSuccess, logApiError } from "@/lib/api-response";
+import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
+import { adminRatelimit } from "@/lib/redis";
 import { moderateReviewSchema } from "@/lib/validations/review";
 import {
   ReviewError,
@@ -10,8 +12,16 @@ import {
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const { isDemo, error } = await requireAdminWrite();
+  const { session, isDemo, error } = await requireAdminWrite();
   if (error) return error;
+
+  const limited = await enforceRateLimit({
+    limiter: adminRatelimit,
+    key: `admin-review:${session!.user.id}:${getClientIp(request)}`,
+    fallbackLimit: 60,
+    fallbackWindowMs: 60 * 1000,
+  });
+  if (limited) return limited;
 
   try {
     const { id } = await context.params;
@@ -19,64 +29,56 @@ export async function PATCH(request: Request, context: RouteContext) {
     const parsed = moderateReviewSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "VALIDATION_ERROR",
-            message: parsed.error.flatten().fieldErrors,
-          },
-        },
-        { status: 400 }
+      return apiError(
+        "VALIDATION_ERROR",
+        parsed.error.flatten().fieldErrors as Record<string, unknown>,
+        400
       );
     }
 
     if (isDemo) {
-      return NextResponse.json({ data: { id, isApproved: parsed.data.isApproved } });
+      return apiSuccess({ id, isApproved: parsed.data.isApproved });
     }
 
     const review = await moderateReview(id, parsed.data.isApproved);
-    return NextResponse.json({ data: review });
+    return apiSuccess(review);
   } catch (err) {
     if (err instanceof ReviewError) {
-      return NextResponse.json(
-        { error: { code: err.code, message: err.message } },
-        { status: 404 }
-      );
+      return apiError(err.code, err.message, 404);
     }
 
-    console.error("[PATCH /api/v1/admin/reviews/[id]]", err);
-    return NextResponse.json(
-      { error: { code: "SERVER_ERROR", message: "Failed to update review" } },
-      { status: 500 }
-    );
+    logApiError("PATCH /api/v1/admin/reviews/[id]", err);
+    return apiError("SERVER_ERROR", "Failed to update review", 500);
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
-  const { isDemo, error } = await requireAdminWrite();
+export async function DELETE(request: Request, context: RouteContext) {
+  const { session, isDemo, error } = await requireAdminWrite();
   if (error) return error;
+
+  const limited = await enforceRateLimit({
+    limiter: adminRatelimit,
+    key: `admin-review-del:${session!.user.id}:${getClientIp(request)}`,
+    fallbackLimit: 60,
+    fallbackWindowMs: 60 * 1000,
+  });
+  if (limited) return limited;
 
   try {
     const { id } = await context.params;
 
     if (isDemo) {
-      return NextResponse.json({ data: { deleted: true } });
+      return apiSuccess({ deleted: true });
     }
 
     await deleteReview(id);
-    return NextResponse.json({ data: { deleted: true } });
+    return apiSuccess({ deleted: true });
   } catch (err) {
     if (err instanceof ReviewError) {
-      return NextResponse.json(
-        { error: { code: err.code, message: err.message } },
-        { status: 404 }
-      );
+      return apiError(err.code, err.message, 404);
     }
 
-    console.error("[DELETE /api/v1/admin/reviews/[id]]", err);
-    return NextResponse.json(
-      { error: { code: "SERVER_ERROR", message: "Failed to delete review" } },
-      { status: 500 }
-    );
+    logApiError("DELETE /api/v1/admin/reviews/[id]", err);
+    return apiError("SERVER_ERROR", "Failed to delete review", 500);
   }
 }

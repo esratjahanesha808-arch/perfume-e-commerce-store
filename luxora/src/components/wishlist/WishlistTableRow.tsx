@@ -5,11 +5,12 @@ import { Star, ShoppingBag, Heart } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { resolveProductImageUrl } from "@/lib/product-images";
 import { useCart } from "@/components/cart/CartProvider";
+import { useWishlist } from "./WishlistProvider";
 import type { WishlistItem } from "./WishlistProvider";
 
 interface WishlistTableRowProps {
   item: WishlistItem;
-  onRemove: (productId: string, productName: string) => void;
+  onRemove: (productId: string, productName?: string) => void;
 }
 
 const STAR = "rgba(196, 154, 69, 1)";
@@ -18,6 +19,13 @@ const STAR_EMPTY = "rgba(196, 154, 69, 0.25)";
 export function WishlistTableRow({ item, onRemove }: WishlistTableRowProps) {
   const { product } = item;
   const { addItem } = useCart();
+  const { remove } = useWishlist();
+
+  const handleMoveToCart = async () => {
+    await addItem(product);
+    // Silently remove from wishlist — cart add already shows "Added to cart" toast
+    await remove(product.id);
+  };
   const imageUrl = resolveProductImageUrl(
     product.images?.[0]?.url,
     product.name,
@@ -92,7 +100,7 @@ export function WishlistTableRow({ item, onRemove }: WishlistTableRowProps) {
           <div className="wishlist-row-buttons">
             <button
               type="button"
-              onClick={() => void addItem(product)}
+              onClick={() => void handleMoveToCart()}
               className="wishlist-add-cart-btn"
             >
               <ShoppingBag size={14} strokeWidth={1.75} />

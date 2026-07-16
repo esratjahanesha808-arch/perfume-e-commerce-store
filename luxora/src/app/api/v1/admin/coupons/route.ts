@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, requireAdminWrite } from "@/lib/api-auth";
+import { apiError, apiSuccess, logApiError } from "@/lib/api-response";
+import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
+import { adminRatelimit } from "@/lib/redis";
 import {
   adminCouponListQuerySchema,
   createCouponSchema,
@@ -29,50 +32,49 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { isDemo, error } = await requireAdminWrite();
+  const { session, isDemo, error } = await requireAdminWrite();
   if (error) return error;
+
+  const limited = await enforceRateLimit({
+    limiter: adminRatelimit,
+    key: `admin-coupon:${session!.user.id}:${getClientIp(request)}`,
+    fallbackLimit: 60,
+    fallbackWindowMs: 60 * 1000,
+  });
+  if (limited) return limited;
 
   try {
     const body = await request.json();
     const parsed = createCouponSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        {
-          error: {
-            code: "VALIDATION_ERROR",
-            message: parsed.error.flatten().fieldErrors,
-          },
-        },
-        { status: 400 }
+      return apiError(
+        "VALIDATION_ERROR",
+        parsed.error.flatten().fieldErrors as Record<string, unknown>,
+        400
       );
     }
 
     if (isDemo) {
-      return NextResponse.json({
-        data: {
+      return apiSuccess(
+        {
           id: `demo-${Date.now()}`,
           ...parsed.data,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-      }, { status: 201 });
-    }
-
-    const coupon = await createCoupon(parsed.data);
-    return NextResponse.json({ data: coupon }, { status: 201 });
-  } catch (err) {
-    if (err instanceof CouponError) {
-      return NextResponse.json(
-        { error: { code: err.code, message: err.message } },
-        { status: 400 }
+        201
       );
     }
 
-    console.error("[POST /api/v1/admin/coupons]", err);
-    return NextResponse.json(
-      { error: { code: "SERVER_ERROR", message: "Failed to create coupon" } },
-      { status: 500 }
-    );
+    const coupon = await createCoupon(parsed.data);
+    return apiSuccess(coupon, 201);
+  } catch (err) {
+    if (err instanceof CouponError) {
+      return apiError(err.code, err.message, 400);
+    }
+
+    logApiError("POST /api/v1/admin/coupons", err);
+    return apiError("SERVER_ERROR", "Failed to create coupon", 500);
   }
 }

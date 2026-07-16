@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdminWrite } from "@/lib/api-auth";
+import { apiError, logApiError } from "@/lib/api-response";
+import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
+import { adminRatelimit } from "@/lib/redis";
 import { adminInventoryAdjustSchema } from "@/lib/validations/inventory";
 import { adjustInventory } from "@/services/inventory.service";
 
@@ -9,14 +12,23 @@ export async function PATCH(request: Request, context: RouteContext) {
   const { session, isDemo, error } = await requireAdminWrite();
   if (error) return error;
 
+  const limited = await enforceRateLimit({
+    limiter: adminRatelimit,
+    key: `admin-inventory:${session!.user.id}:${getClientIp(request)}`,
+    fallbackLimit: 60,
+    fallbackWindowMs: 60 * 1000,
+  });
+  if (limited) return limited;
+
   const { productId } = await context.params;
   const body = await request.json().catch(() => null);
   const parsed = adminInventoryAdjustSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: { code: "VALIDATION_ERROR", message: parsed.error.flatten() } },
-      { status: 400 }
+    return apiError(
+      "VALIDATION_ERROR",
+      parsed.error.flatten() as unknown as Record<string, unknown>,
+      400
     );
   }
 
@@ -44,30 +56,20 @@ export async function PATCH(request: Request, context: RouteContext) {
     const message = err instanceof Error ? err.message : "Adjustment failed";
 
     if (message === "INVENTORY_NOT_FOUND") {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Inventory record not found" } },
-        { status: 404 }
-      );
+      return apiError("NOT_FOUND", "Inventory record not found", 404);
     }
 
     if (message === "STOCK_BELOW_ZERO" || message === "STOCK_BELOW_RESERVED") {
-      return NextResponse.json(
-        {
-          error: {
-            code: "INVALID_ADJUSTMENT",
-            message:
-              message === "STOCK_BELOW_ZERO"
-                ? "Stock cannot be reduced below zero"
-                : "Stock cannot fall below reserved quantity",
-          },
-        },
-        { status: 400 }
+      return apiError(
+        "INVALID_ADJUSTMENT",
+        message === "STOCK_BELOW_ZERO"
+          ? "Stock cannot be reduced below zero"
+          : "Stock cannot fall below reserved quantity",
+        400
       );
     }
 
-    return NextResponse.json(
-      { error: { code: "ADJUSTMENT_FAILED", message } },
-      { status: 500 }
-    );
+    logApiError("PATCH /api/v1/admin/inventory/[productId]", err);
+    return apiError("ADJUSTMENT_FAILED", message, 500);
   }
 }

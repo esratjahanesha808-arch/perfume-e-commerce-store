@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -229,7 +229,7 @@ export function CheckoutPageClient() {
     }
   };
 
-  const panelContent = useMemo(() => {
+  function renderPanel() {
     if (isLoading) {
       return (
         <div className="checkout-loading">
@@ -281,25 +281,7 @@ export function CheckoutPageClient() {
         </div>
       </div>
     );
-  }, [
-    isLoading,
-    isEmpty,
-    shipping,
-    shippingMethod,
-    paymentMethod,
-    cardNumber,
-    cardExpiry,
-    cardCvv,
-    cardName,
-    items,
-    subtotal,
-    couponCode,
-    appliedCouponCode,
-    discountAmount,
-    adjustedShippingCost,
-    isApplyingCoupon,
-    isSubmitting,
-  ]);
+  }
 
   return (
     <div className="checkout-page w-full min-w-0">
@@ -323,7 +305,7 @@ export function CheckoutPageClient() {
 
           <CheckoutStepper activeStep={1} />
 
-          {panelContent}
+          {renderPanel()}
         </SiteContainer>
       </PageSection>
 

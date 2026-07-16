@@ -22,7 +22,7 @@ export function WishlistPageClient({ suggestedProducts }: WishlistPageClientProp
   const showEmpty = !isLoading && (!signedIn || items.length === 0);
   const productsToSuggest = suggestedProducts.filter((p) => !ids.has(p.id)).slice(0, 8);
 
-  const handleRemove = (productId: string, productName: string) => {
+  const handleRemove = (productId: string, productName?: string) => {
     void remove(productId, productName);
   };
 

@@ -274,11 +274,12 @@ model Order {
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")
 
-  user    User        @relation(fields: [userId], references: [id])
-  address Address     @relation(fields: [addressId], references: [id])
-  coupon  Coupon?     @relation(fields: [couponId], references: [id])
-  items   OrderItem[]
-  payment Payment?
+  user         User          @relation(fields: [userId], references: [id])
+  address      Address       @relation(fields: [addressId], references: [id])
+  coupon       Coupon?       @relation(fields: [couponId], references: [id])
+  items        OrderItem[]
+  payment      Payment?
+  couponUsages CouponUsage[]
 
   @@index([userId])
   @@index([status])
@@ -313,7 +314,7 @@ model Review {
   id           String   @id @default(cuid())
   userId       String   @map("user_id")
   productId    String   @map("product_id")
-  rating       Int      // 1–5, enforced in application layer
+  rating       Int      // 1–5; also enforced by DB CHECK constraint
   title        String?
   comment      String?  @db.Text
   isVerified   Boolean  @default(false) @map("is_verified")
@@ -369,9 +370,11 @@ model CouponUsage {
 
   coupon Coupon @relation(fields: [couponId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
+  order  Order  @relation(fields: [orderId], references: [id])
 
   @@unique([couponId, userId, orderId])
   @@index([couponId, userId])
+  @@index([orderId])
   @@map("coupon_usages")
 }
 

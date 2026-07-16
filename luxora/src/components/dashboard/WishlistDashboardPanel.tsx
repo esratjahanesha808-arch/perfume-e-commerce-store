@@ -43,7 +43,7 @@ export function WishlistDashboardPanel() {
             <WishlistTableRow
               key={item.productId}
               item={item}
-              onRemove={(productId, productName) => void remove(productId, productName)}
+              onRemove={(productId, productName?) => void remove(productId, productName)}
             />
           ))}
         </div>

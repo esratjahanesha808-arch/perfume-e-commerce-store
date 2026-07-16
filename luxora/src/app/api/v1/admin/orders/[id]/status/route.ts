@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdminWrite } from "@/lib/api-auth";
+import { apiError, logApiError } from "@/lib/api-response";
+import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
+import { adminRatelimit } from "@/lib/redis";
 import { adminOrderStatusSchema } from "@/lib/validations/order";
 import { updateAdminOrderStatus, getAdminOrderById } from "@/services/order.service";
 
@@ -9,22 +12,27 @@ export async function PATCH(request: Request, context: RouteContext) {
   const { session, isDemo, error } = await requireAdminWrite();
   if (error) return error;
 
+  const limited = await enforceRateLimit({
+    limiter: adminRatelimit,
+    key: `admin-order-status:${session!.user.id}:${getClientIp(request)}`,
+    fallbackLimit: 60,
+    fallbackWindowMs: 60 * 1000,
+  });
+  if (limited) return limited;
+
   const { id } = await context.params;
   const body = await request.json().catch(() => null);
   const parsed = adminOrderStatusSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: { code: "VALIDATION_ERROR", message: parsed.error.flatten() } },
-      { status: 400 }
-    );
+    return apiError("VALIDATION_ERROR", parsed.error.flatten() as unknown as Record<string, unknown>, 400);
   }
 
   try {
     if (isDemo) {
       const order = await getAdminOrderById(id);
       if (!order) {
-        return NextResponse.json({ error: { code: "NOT_FOUND", message: "Order not found" } }, { status: 404 });
+        return apiError("NOT_FOUND", "Order not found", 404);
       }
       return NextResponse.json({ ...order, status: parsed.data.status });
     }
@@ -37,24 +45,16 @@ export async function PATCH(request: Request, context: RouteContext) {
     );
 
     if (!order) {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Order not found" } },
-        { status: 404 }
-      );
+      return apiError("NOT_FOUND", "Order not found", 404);
     }
 
     return NextResponse.json(order);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Update failed";
     if (message === "ORDER_NOT_FOUND") {
-      return NextResponse.json(
-        { error: { code: "NOT_FOUND", message: "Order not found" } },
-        { status: 404 }
-      );
+      return apiError("NOT_FOUND", "Order not found", 404);
     }
-    return NextResponse.json(
-      { error: { code: "UPDATE_FAILED", message } },
-      { status: 500 }
-    );
+    logApiError("PATCH /api/v1/admin/orders/[id]/status", err);
+    return apiError("UPDATE_FAILED", message, 500);
   }
 }

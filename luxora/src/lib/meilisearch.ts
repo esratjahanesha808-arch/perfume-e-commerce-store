@@ -1,21 +1,10 @@
-import { Meilisearch } from "meilisearch";
-
-const MEILISEARCH_HOST = process.env.MEILISEARCH_HOST ?? "";
-const MEILISEARCH_API_KEY = process.env.MEILISEARCH_API_KEY ?? "";
-const MEILISEARCH_ADMIN_KEY = process.env.MEILISEARCH_ADMIN_KEY ?? MEILISEARCH_API_KEY;
+// Meilisearch removed for portfolio mode.
+// meili and meiliAdmin are always null; search falls back to the DB ilike query.
 
 export const PRODUCTS_INDEX = "products";
 
-function createClient(apiKey: string) {
-  if (!MEILISEARCH_HOST) return null;
-  return new Meilisearch({ host: MEILISEARCH_HOST, apiKey });
-}
-
-/** Read-only search client (uses the public search API key). */
-export const meili = createClient(MEILISEARCH_API_KEY);
-
-/** Admin client for indexing operations (uses the master/admin key). */
-export const meiliAdmin = createClient(MEILISEARCH_ADMIN_KEY);
+export const meili = null;
+export const meiliAdmin = null;
 
 export type MeiliProductDoc = {
   id: string;
@@ -30,29 +19,10 @@ export type MeiliProductDoc = {
   avgRating: number;
 };
 
-/**
- * Index or update a batch of product documents in Meilisearch.
- * Safe no-op when MEILISEARCH_HOST is not configured.
- */
-export async function indexProducts(docs: MeiliProductDoc[]) {
-  if (!meiliAdmin || docs.length === 0) return;
-  try {
-    const index = meiliAdmin.index(PRODUCTS_INDEX);
-    await index.addDocuments(docs, { primaryKey: "id" });
-  } catch (err) {
-    console.error("[meilisearch] indexProducts failed:", err);
-  }
+export async function indexProducts(_docs: MeiliProductDoc[]) {
+  // no-op
 }
 
-/**
- * Remove a product from the index.
- * Safe no-op when MEILISEARCH_HOST is not configured.
- */
-export async function deleteProductFromIndex(productId: string) {
-  if (!meiliAdmin) return;
-  try {
-    await meiliAdmin.index(PRODUCTS_INDEX).deleteDocument(productId);
-  } catch (err) {
-    console.error("[meilisearch] deleteProductFromIndex failed:", err);
-  }
+export async function deleteProductFromIndex(_productId: string) {
+  // no-op
 }

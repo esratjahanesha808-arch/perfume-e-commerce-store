@@ -2,29 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { registerSchema } from "@/lib/validations/auth";
 import { registerUser } from "@/services/auth.service";
 import { authRatelimit } from "@/lib/redis";
+import { apiError, logApiError } from "@/lib/api-response";
+import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
-
-    if (authRatelimit) {
-      const { success } = await authRatelimit.limit(ip);
-      if (!success) {
-        return NextResponse.json(
-          { error: { code: "RATE_LIMITED", message: "Too many requests. Please try again later." } },
-          { status: 429 }
-        );
-      }
-    }
+    const limited = await enforceRateLimit({
+      limiter: authRatelimit,
+      key: `register:${getClientIp(req)}`,
+      fallbackLimit: 5,
+      fallbackWindowMs: 15 * 60 * 1000,
+    });
+    if (limited) return limited;
 
     const body = await req.json();
     const parsed = registerSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: { code: "VALIDATION_ERROR", message: "Invalid input", details: parsed.error.flatten() } },
-        { status: 400 }
-      );
+      return apiError("VALIDATION_ERROR", "Invalid input", 400, parsed.error.flatten());
     }
 
     const { name, email, password } = parsed.data;
@@ -42,27 +37,18 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     if (error instanceof Error && error.message === "EMAIL_TAKEN") {
-      return NextResponse.json(
-        {
-          error: {
-            code: "EMAIL_TAKEN",
-            message: "An account with this email already exists. Please sign in instead.",
-          },
-        },
-        { status: 409 }
+      return apiError(
+        "EMAIL_TAKEN",
+        "An account with this email already exists. Please sign in instead.",
+        409
       );
     }
 
-    console.error("[REGISTER_ERROR]", error);
-    return NextResponse.json(
-      {
-        error: {
-          code: "SERVER_ERROR",
-          message:
-            "We could not create your account right now. Please check your connection and try again.",
-        },
-      },
-      { status: 500 }
+    logApiError("POST /api/v1/auth/register", error);
+    return apiError(
+      "SERVER_ERROR",
+      "We could not create your account right now. Please check your connection and try again.",
+      500
     );
   }
 }

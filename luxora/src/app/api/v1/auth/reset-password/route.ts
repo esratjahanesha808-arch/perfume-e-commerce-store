@@ -1,16 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resetPasswordSchema } from "@/lib/validations/auth";
 import { resetPassword } from "@/services/auth.service";
+import { authRatelimit } from "@/lib/redis";
+import { apiError, logApiError } from "@/lib/api-response";
+import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = await enforceRateLimit({
+      limiter: authRatelimit,
+      key: `reset:${getClientIp(req)}`,
+      fallbackLimit: 5,
+      fallbackWindowMs: 15 * 60 * 1000,
+    });
+    if (limited) return limited;
+
     const body = await req.json();
     const parsed = resetPasswordSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: { code: "VALIDATION_ERROR", message: "Invalid input", details: parsed.error.flatten() } },
-        { status: 400 }
-      );
+      return apiError("VALIDATION_ERROR", "Invalid input", 400, parsed.error.flatten());
     }
 
     const { token, password } = parsed.data;
@@ -20,22 +28,17 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === "INVALID_TOKEN") {
-        return NextResponse.json(
-          { error: { code: "INVALID_TOKEN", message: "Invalid or expired reset link." } },
-          { status: 400 }
-        );
+        return apiError("INVALID_TOKEN", "Invalid or expired reset link.", 400);
       }
       if (error.message === "TOKEN_EXPIRED") {
-        return NextResponse.json(
-          { error: { code: "TOKEN_EXPIRED", message: "Reset link has expired. Please request a new one." } },
-          { status: 400 }
+        return apiError(
+          "TOKEN_EXPIRED",
+          "Reset link has expired. Please request a new one.",
+          400
         );
       }
     }
-    console.error("[RESET_PASSWORD_ERROR]", error);
-    return NextResponse.json(
-      { error: { code: "SERVER_ERROR", message: "Something went wrong" } },
-      { status: 500 }
-    );
+    logApiError("POST /api/v1/auth/reset-password", error);
+    return apiError("SERVER_ERROR", "Something went wrong", 500);
   }
 }

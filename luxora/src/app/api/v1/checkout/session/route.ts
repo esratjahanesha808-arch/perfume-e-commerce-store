@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api-auth";
+import { apiError, apiSuccess, logApiError } from "@/lib/api-response";
+import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
+import { writeRatelimit } from "@/lib/redis";
 import { isStripeConfigured } from "@/lib/stripe";
 import { checkoutOrderSchema } from "@/lib/validations/checkout";
 import { CouponError } from "@/services/coupon.service";
@@ -9,16 +11,19 @@ export async function POST(request: Request) {
   const { session, error } = await requireAuth();
   if (error) return error;
 
+  const limited = await enforceRateLimit({
+    limiter: writeRatelimit,
+    key: `checkout-session:${session!.user!.id}:${getClientIp(request)}`,
+    fallbackLimit: 30,
+    fallbackWindowMs: 60 * 1000,
+  });
+  if (limited) return limited;
+
   if (!isStripeConfigured) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "STRIPE_NOT_CONFIGURED",
-          message:
-            "Stripe is not configured. Add STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to .env.local.",
-        },
-      },
-      { status: 503 }
+    return apiError(
+      "STRIPE_NOT_CONFIGURED",
+      "Stripe is not configured. Add STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to .env.local.",
+      503
     );
   }
 
@@ -27,10 +32,7 @@ export async function POST(request: Request) {
     const parsed = checkoutOrderSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: { code: "VALIDATION_ERROR", message: "Invalid checkout data" } },
-        { status: 400 }
-      );
+      return apiError("VALIDATION_ERROR", "Invalid checkout data", 400);
     }
 
     const checkoutSession = await createStripeCheckoutSession(
@@ -38,42 +40,28 @@ export async function POST(request: Request) {
       parsed.data
     );
 
-    return NextResponse.json({
-      data: {
-        sessionId: checkoutSession.sessionId,
-        clientSecret: checkoutSession.clientSecret,
-        orderId: checkoutSession.orderId,
-        orderNumber: checkoutSession.orderNumber,
-        total: checkoutSession.total,
-      },
+    return apiSuccess({
+      sessionId: checkoutSession.sessionId,
+      clientSecret: checkoutSession.clientSecret,
+      orderId: checkoutSession.orderId,
+      orderNumber: checkoutSession.orderNumber,
+      total: checkoutSession.total,
     });
   } catch (err) {
     if (err instanceof CouponError) {
-      return NextResponse.json(
-        { error: { code: err.code, message: err.message } },
-        { status: 400 }
-      );
+      return apiError(err.code, err.message, 400);
     }
 
     if (err instanceof Error) {
       if (err.message === "EMPTY_CART") {
-        return NextResponse.json(
-          { error: { code: "EMPTY_CART", message: "Your cart is empty" } },
-          { status: 400 }
-        );
+        return apiError("EMPTY_CART", "Your cart is empty", 400);
       }
       if (err.message === "OUT_OF_STOCK") {
-        return NextResponse.json(
-          { error: { code: "OUT_OF_STOCK", message: "An item in your cart is out of stock" } },
-          { status: 400 }
-        );
+        return apiError("OUT_OF_STOCK", "An item in your cart is out of stock", 400);
       }
     }
 
-    console.error("[POST /api/v1/checkout/session]", err);
-    return NextResponse.json(
-      { error: { code: "SERVER_ERROR", message: "Failed to create payment session" } },
-      { status: 500 }
-    );
+    logApiError("POST /api/v1/checkout/session", err);
+    return apiError("SERVER_ERROR", "Failed to create payment session", 500);
   }
 }

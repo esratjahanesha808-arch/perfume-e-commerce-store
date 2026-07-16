@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
-import { NextResponse } from "next/server";
-import { DEMO_MODE_RESPONSE } from "@/lib/demo";
+import { apiError } from "@/lib/api-response";
 
 export async function requireAuth() {
   const session = await auth();
@@ -8,10 +7,7 @@ export async function requireAuth() {
   if (!session?.user?.id) {
     return {
       session: null,
-      error: NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Authentication required" } },
-        { status: 401 }
-      ),
+      error: apiError("UNAUTHORIZED", "Authentication required", 401),
     };
   }
 
@@ -29,10 +25,7 @@ export async function requireAdmin() {
   if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
     return {
       session: null,
-      error: NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Admin access required" } },
-        { status: 403 }
-      ),
+      error: apiError("FORBIDDEN", "Admin access required", 403),
     };
   }
 

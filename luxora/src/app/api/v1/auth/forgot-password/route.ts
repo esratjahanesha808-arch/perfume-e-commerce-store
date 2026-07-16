@@ -2,27 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { forgotPasswordSchema } from "@/lib/validations/auth";
 import { forgotPassword } from "@/services/auth.service";
 import { authRatelimit } from "@/lib/redis";
+import { apiError, logApiError } from "@/lib/api-response";
+import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
-    if (authRatelimit) {
-      const { success } = await authRatelimit.limit(`forgot:${ip}`);
-      if (!success) {
-        return NextResponse.json(
-          { error: { code: "RATE_LIMITED", message: "Too many requests." } },
-          { status: 429 }
-        );
-      }
-    }
+    const limited = await enforceRateLimit({
+      limiter: authRatelimit,
+      key: `forgot:${getClientIp(req)}`,
+      fallbackLimit: 5,
+      fallbackWindowMs: 15 * 60 * 1000,
+    });
+    if (limited) return limited;
 
     const body = await req.json();
     const parsed = forgotPasswordSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: { code: "VALIDATION_ERROR", message: "Invalid email" } },
-        { status: 400 }
-      );
+      return apiError("VALIDATION_ERROR", "Invalid email", 400);
     }
 
     const result = await forgotPassword(parsed.data.email);
@@ -33,10 +29,7 @@ export async function POST(req: NextRequest) {
       emailConfigured: result.emailSent,
     });
   } catch (error) {
-    console.error("[FORGOT_PASSWORD_ERROR]", error);
-    return NextResponse.json(
-      { error: { code: "SERVER_ERROR", message: "Something went wrong" } },
-      { status: 500 }
-    );
+    logApiError("POST /api/v1/auth/forgot-password", error);
+    return apiError("SERVER_ERROR", "Something went wrong", 500);
   }
 }
