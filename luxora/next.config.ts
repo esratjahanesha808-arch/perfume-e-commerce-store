@@ -52,7 +52,6 @@ export default process.env.SENTRY_AUTH_TOKEN
       project: process.env.SENTRY_PROJECT ?? "luxora",
       silent: true,
       telemetry: false,
-      hideSourceMaps: true,
       disableLogger: true,
     })
   : nextConfig;
