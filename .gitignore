@@ -34,3 +34,6 @@ debug*.log
 # Agent instruction files inside the app folder
 luxora/AGENTS.md
 luxora/CLAUDE.md
+
+# Playwright artifacts
+luxora/test-results/
