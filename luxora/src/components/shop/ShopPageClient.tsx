@@ -251,6 +251,7 @@ export function ShopPageClient({
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
+                      aria-label="Sort products"
                       className="appearance-none bg-[#111111] border border-[rgba(200,169,107,0.2)] text-xs text-[#F5F5F5] py-2.5 pl-4 pr-10 rounded-md tracking-wider uppercase focus:outline-none focus:border-[#C8A96B] cursor-pointer transition-colors duration-200"
                     >
                       <option value="popularity">Popularity</option>

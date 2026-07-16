@@ -127,6 +127,7 @@ export function SidebarFilters({
             step="10"
             value={priceRange}
             onChange={(e) => setPriceRange(Number(e.target.value))}
+            aria-label="Maximum price filter"
             className="h-1 w-full cursor-pointer appearance-none rounded-lg border border-[rgba(200,169,107,0.15)] bg-[#090909] accent-[#C8A96B]"
             style={{
               background: `linear-gradient(to right, #C8A96B 0%, #C8A96B ${pricePercent}%, #090909 ${pricePercent}%, #090909 100%)`,
