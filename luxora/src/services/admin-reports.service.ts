@@ -134,7 +134,7 @@ export async function getProductsReport(): Promise<{
     select: {
       productId: true,
       quantity: true,
-      unitPrice: true,
+      productPrice: true,
     },
   });
 
@@ -145,7 +145,7 @@ export async function getProductsReport(): Promise<{
       productMap[item.productId] = { units: 0, revenue: 0 };
     }
     productMap[item.productId].units += item.quantity;
-    productMap[item.productId].revenue += Number(item.unitPrice) * item.quantity;
+    productMap[item.productId].revenue += Number(item.productPrice) * item.quantity;
   }
 
   const productIds = Object.keys(productMap);
