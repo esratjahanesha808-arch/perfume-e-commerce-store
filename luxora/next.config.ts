@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 import { getServerActionAllowedOrigins } from "./src/lib/env";
 
 const securityHeaders = [
@@ -43,4 +44,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Wrap with Sentry only when SENTRY_AUTH_TOKEN is present (source map uploads).
+// When the token is absent the build proceeds exactly as before.
+export default process.env.SENTRY_AUTH_TOKEN
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG ?? "",
+      project: process.env.SENTRY_PROJECT ?? "luxora",
+      silent: true,
+      telemetry: false,
+      hideSourceMaps: true,
+      disableLogger: true,
+    })
+  : nextConfig;

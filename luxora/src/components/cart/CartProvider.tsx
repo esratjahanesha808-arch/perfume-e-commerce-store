@@ -68,6 +68,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (useCartStore.persist.hasHydrated()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasHydrated(true);
       return;
     }

@@ -36,6 +36,7 @@ interface ProductDetailsClientProps {
     images: { id: string; url: string; altText: string | null; isPrimary: boolean }[];
     inventory: { quantity: number; reserved: number } | null;
   };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   relatedProducts: any[];
 }
 

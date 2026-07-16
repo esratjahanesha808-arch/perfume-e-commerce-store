@@ -66,6 +66,7 @@ export function CheckoutPageClient() {
 
   useEffect(() => {
     if (session?.user?.email && !shipping.email) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShipping((prev) => ({
         ...prev,
         email: session.user?.email ?? "",

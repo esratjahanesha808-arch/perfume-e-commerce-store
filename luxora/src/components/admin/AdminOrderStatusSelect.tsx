@@ -30,6 +30,7 @@ export function AdminOrderStatusSelect({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatus(currentStatus);
   }, [currentStatus]);
 

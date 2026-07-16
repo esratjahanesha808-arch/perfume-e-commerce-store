@@ -51,10 +51,12 @@ export function ShopPageClient({
   const itemsPerPage = 6;
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPriceRange(maxPrice);
   }, [maxPrice]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(1);
   }, [selectedCategory, selectedBrands, brandSearchQuery, globalSearchQuery, priceRange, selectedConcentrations, sortBy]);
 

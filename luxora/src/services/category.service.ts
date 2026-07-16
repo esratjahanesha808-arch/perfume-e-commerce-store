@@ -45,7 +45,7 @@ export async function getAllCategories() {
 // ── Get Root Categories (no parent) ───────────────────────────
 export async function getRootCategories() {
   const all = await getAllCategories();
-  return (all || []).filter((c: any) => c.parentId === null);
+  return (all || []).filter((c) => c.parentId === null);
 }
 
 // ── Invalidate category cache ──────────────────────────────────

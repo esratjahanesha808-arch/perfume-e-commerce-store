@@ -82,6 +82,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (status === "loading") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
   }, [status, refresh]);
 

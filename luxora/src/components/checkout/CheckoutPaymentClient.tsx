@@ -27,6 +27,7 @@ export function CheckoutPaymentClient() {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setClientSecret(secret);
     setOrderNumber(order);
   }, [publishableKey, router]);

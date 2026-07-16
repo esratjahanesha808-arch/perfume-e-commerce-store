@@ -235,7 +235,7 @@ export default async function HomePage() {
                 maxWidth: "400px",
               }}
             >
-              Explore the world's finest fragrances from iconic brands and niche collections.
+              Explore the world&apos;s finest fragrances from iconic brands and niche collections.
             </p>
 
             {/* CTA */}
