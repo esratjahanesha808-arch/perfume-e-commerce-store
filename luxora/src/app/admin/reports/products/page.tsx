@@ -10,7 +10,7 @@ export default async function AdminProductsReportPage() {
         Product performance based on completed and confirmed orders.
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-6, 1.5rem)" }}>
+      <div className="admin-dashboard-grid">
         {/* Top by Revenue */}
         <section className="admin-card admin-recent-orders">
           <div className="admin-card-header">
@@ -72,7 +72,7 @@ export default async function AdminProductsReportPage() {
                 <tr>
                   <th scope="col">Product</th>
                   <th scope="col" className="admin-table-num">Units</th>
-                  <th scope="col" className="admin-table-num">Avg Rating</th>
+                  <th scope="col" className="admin-table-num">Revenue</th>
                 </tr>
               </thead>
               <tbody>
@@ -94,8 +94,8 @@ export default async function AdminProductsReportPage() {
                         </div>
                       </td>
                       <td className="admin-table-num admin-table-strong">{row.unitsSold}</td>
-                      <td className="admin-table-num admin-table-muted">
-                        {row.avgRating > 0 ? `${row.avgRating.toFixed(1)} ★` : "—"}
+                      <td className="admin-table-num admin-table-strong">
+                        {formatPrice(row.revenue)}
                       </td>
                     </tr>
                   ))
