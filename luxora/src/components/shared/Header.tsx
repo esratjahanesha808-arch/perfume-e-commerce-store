@@ -52,10 +52,6 @@ export function Header() {
           </span>
 
           <div className="flex items-center gap-3 tracking-wide shrink-0">
-            <Link href="/track" className="hover:text-gold transition-colors whitespace-nowrap">Track Order</Link>
-            <span className="text-border-dark">|</span>
-            <Link href="/help"  className="hover:text-gold transition-colors">Help</Link>
-            <span className="text-border-dark">|</span>
             <button className="hover:text-gold transition-colors flex items-center gap-1">
               EN <ChevronDown size={11} />
             </button>
