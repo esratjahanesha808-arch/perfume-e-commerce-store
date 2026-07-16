@@ -1,4 +1,4 @@
-import { MeiliSearch } from "meilisearch";
+import { Meilisearch } from "meilisearch";
 
 const MEILISEARCH_HOST = process.env.MEILISEARCH_HOST ?? "";
 const MEILISEARCH_API_KEY = process.env.MEILISEARCH_API_KEY ?? "";
@@ -8,7 +8,7 @@ export const PRODUCTS_INDEX = "products";
 
 function createClient(apiKey: string) {
   if (!MEILISEARCH_HOST) return null;
-  return new MeiliSearch({ host: MEILISEARCH_HOST, apiKey });
+  return new Meilisearch({ host: MEILISEARCH_HOST, apiKey });
 }
 
 /** Read-only search client (uses the public search API key). */
