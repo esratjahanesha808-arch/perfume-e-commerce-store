@@ -203,7 +203,7 @@ Release-level QA automation exists and is running: lint/build gates pass, smoke 
 ## Phase 9 — Deployment
 
 ### Summary
-Build and baseline deployment config are in place; security hardening and observability remain incomplete.
+Build and deployment hardening are complete for the current release gate; optional monitoring activation remains deferred by choice, not as a blocker.
 
 ### Checklist Results
 - Production build: PASS
@@ -228,6 +228,6 @@ Build and baseline deployment config are in place; security hardening and observ
 
 ## Consolidated Status
 - Completed audit phases: 1–9
-- Production readiness: GO (Critical/High gate clear; non-critical contrast hardening deferred to post-launch backlog)
+- Production readiness: GO (Critical/High gate clear; handoff checklist completed; non-critical contrast hardening deferred to post-launch backlog)
 - Release blockers: No open Critical/High issues in tracker
 - Canonical issue list: `docs/testing/open-issues.md`
